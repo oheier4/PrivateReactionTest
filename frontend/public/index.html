@@ -1,342 +1,1504 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>ZAMA • FHEVM — Partner Tariff Gate</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="color-scheme" content="dark" />
+  <meta charset="UTF-8" />
+  <title>Zama • Private Reaction Test</title>
+
+  <!-- Required for Relayer SDK (WASM / Workers) -->
   <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin" />
   <meta http-equiv="Cross-Origin-Embedder-Policy" content="require-corp" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
   <style>
-    :root{ --bg:#0b0f1a; --bg2:#090e18; --ink:#eaf1ff; --muted:#b6c4e3; --card:#0f1728; --br:#1a2540; --glow:rgba(56,189,248,.18); --accent:#2f66ff; --accent-2:#2553e6; --ok:#7ef29a; --bad:#ff8b8b; }
-    *{box-sizing:border-box} html,body{height:100%}
-    body{ margin:0; color:var(--ink);
-      background: radial-gradient(60% 40% at 50% -10%, #0f1a33 0%, transparent 70%), linear-gradient(180deg, var(--bg2) 0%, var(--bg) 100%);
-      font:15px/1.55 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica Neue, Arial;}
-    .wrap{max-width:1180px; margin:30px auto; padding:0 18px; display:grid; gap:18px; grid-template-columns: 1.1fr .9fr}
-    .spacer{flex:1} .pill{padding:6px 10px; border:1px solid var(--br); border-radius:10px; background:linear-gradient(to bottom, rgba(255,255,255,.03), transparent 30%), linear-gradient(150deg, #182033, #060a16); color:#cfe0ff; font-weight:800; white-space:nowrap}
-    .title{font-size:22px; font-weight:900}
-    .card{border:1px solid var(--br); border-radius:16px; background:radial-gradient(circle at top center, var(--glow) 0, rgba(15,23,42,.96) 36%, #020617 70%); box-shadow:0 1px 0 rgba(15,23,42,.9), 0 28px 60px rgba(0,0,0,.8), 0 0 36px var(--glow);}    
-    .card .hd{padding:14px 16px; border-bottom:1px solid var(--br); display:flex; align-items:center; gap:10px}
-    .card .bd{padding:14px 16px;}
-    .grid{display:grid; gap:12px} .grid.cols-2{grid-template-columns:1fr 1fr}
-    label{font-size:12px; color:#9db1e8; text-transform:uppercase; letter-spacing:.06em; font-weight:800; display:block; margin-bottom:6px}
-    input{width:100%; padding:12px; border-radius:12px; border:1px solid var(--br); background:#0b1220; color:var(--ink); font-weight:800; outline:none}
-    .btn{display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:42px; padding:10px 14px; border-radius:12px; border:1px solid rgba(31,41,55,.9); color:var(--ink); font-weight:900; cursor:pointer; background:linear-gradient(to bottom, rgba(255,255,255,.06), transparent 32%), linear-gradient(145deg, #1f2933, #020617); box-shadow:0 0 0 1px rgba(15,23,42,.9), 0 14px 30px rgba(0,0,0,.7), 0 0 26px var(--glow);}    
-    .btn:hover{transform:translateY(-1px); box-shadow:0 0 0 1px rgba(15,23,42,1), 0 18px 40px rgba(0,0,0,.85), 0 0 30px rgba(56,189,248,.35)}
-    .btn[disabled]{opacity:.55; cursor:not-allowed} .btn.primary{background:linear-gradient(180deg, var(--accent) 0%, var(--accent-2) 100%); box-shadow:0 14px 40px rgba(47,102,255,.28), inset 0 0 0 1px rgba(255,255,255,.05)}
-    .kv{display:grid; grid-template-columns:140px 1fr; gap:8px; align-items:center}
-    .mono{font-family:ui-monospace, Menlo, Consolas, 'Courier New', monospace} .muted{color:var(--muted)} .ok{color:var(--ok)} .bad{color:var(--bad)}
-    .sep{height:1px; background:var(--br); margin:8px 0} .footer{grid-column:1/-1; text-align:center; color:#9db1e8; opacity:.85; padding:8px}
-    .row-actions{display:flex; gap:10px; flex-wrap:wrap}
-    .result-box{padding:10px 12px; border:1px solid var(--br); border-radius:12px; background:linear-gradient(to bottom, rgba(255,255,255,.03), transparent 32%), linear-gradient(145deg, #132035, #020617);}    
-    .tag{display:inline-block; padding:2px 8px; border-radius:10px; border:1px solid var(--br); background:#0b1424; color:#cfe0ff; font-size:12px; font-weight:800}
-    .row-split{display:grid; grid-template-columns:1fr auto; gap:10px; align-items:center} .small{font-size:12px}
+    :root {
+      --bg-1: #fef9c3;
+      --bg-2: #e0f2fe;
+      --bg-3: #fce7f3;
+      --card-bg: #ffffff;
+      --accent: #22c55e;
+      --accent-soft: #bbf7d0;
+      --accent-strong: #16a34a;
+      --text-main: #0f172a;
+      --text-muted: #6b7280;
+      --border-soft: rgba(148, 163, 184, 0.4);
+      --shadow-soft: 0 18px 60px rgba(15, 23, 42, 0.18);
+      --radius-xl: 26px;
+      --radius-lg: 999px;
+      --transition-fast: 150ms ease-out;
+      --transition-med: 220ms cubic-bezier(0.19, 1, 0.22, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+        "Segoe UI", sans-serif;
+      color: var(--text-main);
+      background: radial-gradient(circle at top left, var(--bg-1), transparent 55%),
+        radial-gradient(circle at top right, var(--bg-2), transparent 55%),
+        radial-gradient(circle at bottom, var(--bg-3), #f9fafb 65%);
+      display: flex;
+      align-items: stretch;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .app-shell {
+      width: 100%;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .app-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-logo {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: conic-gradient(from 180deg, #22c55e, #0ea5e9, #f97316, #22c55e);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.9),
+        0 10px 30px rgba(15, 23, 42, 0.25);
+    }
+
+    .brand-logo span {
+      font-size: 22px;
+      color: #ffffff;
+    }
+
+    .brand-text-main {
+      font-weight: 700;
+      font-size: 22px;
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      letter-spacing: 0.02em;
+    }
+
+    .brand-text-main span:last-child {
+      font-weight: 500;
+      font-size: 18px;
+      color: var(--text-muted);
+    }
+
+    .brand-subtitle {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .chip-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.7);
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      font-size: 12px;
+      color: var(--text-muted);
+      backdrop-filter: blur(10px);
+    }
+
+    .chip.highlight {
+      background: rgba(34, 197, 94, 0.1);
+      border-color: rgba(34, 197, 94, 0.5);
+      color: var(--accent-strong);
+      font-weight: 600;
+    }
+
+    .btn {
+      border: none;
+      border-radius: var(--radius-lg);
+      padding: 10px 22px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #0f172a;
+      color: white;
+      box-shadow: 0 14px 30px rgba(15, 23, 42, 0.35);
+      transition: transform var(--transition-fast),
+        box-shadow var(--transition-fast), background var(--transition-fast),
+        opacity var(--transition-fast);
+      letter-spacing: 0.03em;
+    }
+
+    .btn span.icon {
+      font-size: 16px;
+    }
+
+    .btn.secondary {
+      background: rgba(148, 163, 184, 0.06);
+      color: var(--text-main);
+      box-shadow: none;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+    }
+
+    .btn.full {
+      width: 100%;
+      justify-content: center;
+      padding: 14px 24px;
+      font-size: 16px;
+    }
+
+    .btn.big {
+      padding: 15px 26px;
+      font-size: 18px;
+    }
+
+    .btn:disabled {
+      opacity: 0.65;
+      cursor: default;
+      box-shadow: none;
+      transform: none;
+    }
+
+    .btn:not(:disabled):hover {
+      transform: translateY(-1px);
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.4);
+    }
+
+    .btn.secondary:not(:disabled):hover {
+      box-shadow: 0 10px 25px rgba(148, 163, 184, 0.35);
+      background: rgba(255, 255, 255, 0.9);
+    }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+      gap: 22px;
+      align-items: stretch;
+      margin-bottom: 16px;
+    }
+
+    .card {
+      background: radial-gradient(circle at top left, #fefce8, #ffffff 55%);
+      border-radius: var(--radius-xl);
+      padding: 22px 22px 20px;
+      box-shadow: var(--shadow-soft);
+      border: 1px solid var(--border-soft);
+      backdrop-filter: blur(16px);
+    }
+
+    .card.result {
+      background: radial-gradient(circle at top right, #e0f2fe, #ffffff 55%);
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-title span.icon {
+      font-size: 20px;
+    }
+
+    .reaction-top-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+
+    .reaction-panel {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      gap: 18px;
+      align-items: center;
+    }
+
+    .reaction-pad {
+      width: 220px;
+      height: 220px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 16px;
+      cursor: pointer;
+      user-select: none;
+      transition: background var(--transition-med),
+        box-shadow var(--transition-med), transform var(--transition-med);
+      box-shadow: 0 16px 50px rgba(15, 23, 42, 0.35);
+      color: #0b1120;
+      font-weight: 700;
+      font-size: 18px;
+    }
+
+    .reaction-pad span.main-text {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 19px;
+    }
+
+    .reaction-pad span.sub-text {
+      font-size: 13px;
+      opacity: 0.9;
+    }
+
+    .pad-idle {
+      background: radial-gradient(circle at 30% 0%, #e0f2fe, #f9fafb);
+    }
+
+    .pad-waiting {
+      background: radial-gradient(circle at 30% 0%, #f97316, #fee2e2);
+      animation: pulse-wait 1.2s infinite;
+    }
+
+    .pad-ready {
+      background: radial-gradient(circle at 30% 0%, #4ade80, #bbf7d0);
+      animation: pulse-ready 0.9s infinite;
+    }
+
+    .pad-too-early {
+      background: radial-gradient(circle at 30% 0%, #f97373, #fecaca);
+      animation: shake 300ms ease-in-out;
+    }
+
+    .pad-done {
+      background: radial-gradient(circle at 30% 0%, #a855f7, #e9d5ff);
+    }
+
+    @keyframes pulse-wait {
+      0% { transform: translateY(0) scale(1); box-shadow: 0 16px 50px rgba(248, 113, 113, 0.5); }
+      50% { transform: translateY(2px) scale(0.99); box-shadow: 0 10px 30px rgba(248, 113, 113, 0.3); }
+      100% { transform: translateY(0) scale(1); box-shadow: 0 16px 50px rgba(248, 113, 113, 0.5); }
+    }
+
+    @keyframes pulse-ready {
+      0% { transform: translateY(0) scale(1); box-shadow: 0 16px 50px rgba(34, 197, 94, 0.5); }
+      50% { transform: translateY(2px) scale(0.99); box-shadow: 0 10px 30px rgba(34, 197, 94, 0.3); }
+      100% { transform: translateY(0) scale(1); box-shadow: 0 16px 50px rgba(34, 197, 94, 0.5); }
+    }
+
+    @keyframes shake {
+      0% { transform: translateX(0); }
+      25% { transform: translateX(-6px); }
+      50% { transform: translateX(4px); }
+      75% { transform: translateX(-3px); }
+      100% { transform: translateX(0); }
+    }
+
+    .reaction-side {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .reaction-status {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .reaction-ms {
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    .reaction-ms span.unit {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-left: 6px;
+    }
+
+    .result-top {
+      margin-bottom: 10px;
+    }
+
+    .pill-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 8px;
+      align-items: center;
+    }
+
+    .tier-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      border: 1px solid rgba(148, 163, 184, 0.5);
+      background: rgba(255, 255, 255, 0.85);
+      color: var(--text-muted);
+    }
+
+    .tier-pill.current {
+      font-weight: 700;
+      background: rgba(34, 197, 94, 0.1);
+      border-color: rgba(34, 197, 94, 0.6);
+      color: var(--accent-strong);
+    }
+
+    .tier-pill.gold {
+      border-color: #facc15;
+      background: #fef9c3;
+      color: #92400e;
+    }
+
+    .tier-pill.silver {
+      border-color: #cbd5f5;
+      background: #e5e7eb;
+      color: #374151;
+    }
+
+    .tier-pill.bronze {
+      border-color: #f97316;
+      background: #ffedd5;
+      color: #7c2d12;
+    }
+
+    .tier-label {
+      font-size: 30px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+
+    .tier-label span.emoji {
+      font-size: 32px;
+    }
+
+    .tier-description {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    .footer {
+      margin-top: 8px;
+      font-size: 11px;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .footer a {
+      color: #0ea5e9;
+      text-decoration: none;
+    }
+
+    .footer a:hover {
+      text-decoration: underline;
+    }
+
+    /* Admin panel */
+    .admin-card {
+      margin-top: 10px;
+      font-size: 13px;
+    }
+
+    .admin-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin-top: 6px;
+    }
+
+    .admin-field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .admin-field label {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .admin-field input {
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.7);
+      padding: 7px 10px;
+      font-size: 13px;
+      width: 110px;
+      outline: none;
+    }
+
+    .admin-status {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-left: 2px;
+      margin-top: 4px;
+    }
+
+    @media (max-width: 960px) {
+      body {
+        padding: 16px 12px;
+      }
+
+      .main-grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .reaction-panel {
+        grid-template-columns: minmax(0, 1fr);
+        justify-items: center;
+      }
+
+      .reaction-pad {
+        width: 200px;
+        height: 200px;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .card {
+        border-radius: 20px;
+        padding: 18px 16px 16px;
+      }
+
+      .brand-text-main {
+        font-size: 20px;
+      }
+
+      .tier-label {
+        font-size: 24px;
+      }
+    }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <section class="card">
-      <div class="hd">
-        <div class="title">Partner Tariff Gate</div>
-        <span class="pill">ZAMA · FHEVM</span>
-        <span class="spacer"></span>
-        <span class="pill" id="net-pill">Network: —</span>
-        <button class="btn" id="btn-connect">Connect</button>
+  <div class="app-shell">
+    <header class="app-header">
+      <div class="brand">
+        <div class="brand-logo">
+          <span>⚡</span>
+        </div>
+        <div>
+          <div class="brand-text-main">
+            <span>Zama</span><span>Private Reaction Test</span>
+          </div>
+          <div class="brand-subtitle">
+            Press when it turns green. Chain only sees your tier — not your milliseconds.
+          </div>
+        </div>
       </div>
-      <div class="bd grid">
-        <div class="card">
-          <div class="hd"><b>Eligibility · Encrypted user input</b></div>
-          <div class="bd grid">
-            <div class="result-box" id="decisionBox">Decision: <span class="tag">n/a</span></div>
 
-            <div class="grid cols-2">
-              <div><label>Plan ID</label><input id="planId" type="number" min="1" value="1" /></div>
-              <div></div>
-              <div><label>KYC level (u8)</label><input id="kyc" type="number" min="0" max="255" value="3" /></div>
-              <div><label>Tenure days (u16)</label><input id="tenure" type="number" min="0" max="65535" value="45" /></div>
-              <div><label>Trade volume (u32)</label><input id="volume" type="number" min="0" max="4294967295" value="1500" /></div>
-              <div style="display:flex;align-items:flex-end;justify-content:flex-end">
-                <button class="btn primary" id="btn-eval">Encrypt &amp; Evaluate</button>
-              </div>
-            </div>
+      <div class="chip-row">
+        <div class="chip">
+          <span>Network:</span>
+          <strong>Sepolia FHEVM</strong>
+        </div>
+        <div class="chip" id="addressChip">
+          <span>Wallet:</span><span id="addressBadge">Not connected</span>
+        </div>
+        <button class="btn" id="connectBtn">
+          <span class="icon">🦊</span><span id="connectBtnLabel">Connect Wallet</span>
+        </button>
+        <button class="btn secondary" id="disconnectBtn" style="display:none;">
+          <span class="icon">⏏</span><span>Disconnect</span>
+        </button>
+      </div>
+    </header>
 
+    <div class="main-grid">
+      <!-- LEFT: reaction game -->
+      <section class="card">
+        <div class="section-title">
+          <span class="icon">🎮</span><span>Private Reaction Mini-Game</span>
+        </div>
+
+        <div class="reaction-top-row">
+          <button class="btn secondary big" id="startTestBtn">
+            <span class="icon">🚦</span>
+            <span>Start new reaction test</span>
+          </button>
+          <div style="font-size:12px; color:var(--text-muted);">
+            Contract:&nbsp;<strong>0x336AD8895440fB523EEA1573A8f13c0d7C5aE130</strong>
+          </div>
+        </div>
+
+        <div class="reaction-panel">
+          <div
+            class="reaction-pad pad-idle"
+            id="reactionPad"
+            aria-label="Reaction test pad"
+          >
             <div>
-              <label>Handle</label>
-              <div class="row-split">
-                <input id="handleOut" class="mono small" readonly placeholder="—" />
-                <button class="btn" id="btn-copy">Copy</button>
-              </div>
+              <span class="main-text" id="padMainText">Tap to get ready</span>
+              <span class="sub-text" id="padSubText">
+                Wait for green, then tap as fast as you can.
+              </span>
             </div>
+          </div>
 
-            <div class="row-actions">
-              <button class="btn" id="btn-make-public">Make my decision public</button>
-              <button class="btn" id="btn-public-decrypt">Decrypt (public)</button>
-              <button class="btn" id="btn-user-decrypt">Decrypt (signed)</button>
+          <div class="reaction-side">
+            <div class="reaction-status" id="reactionStatus">
+              Waiting for you to start the test.
             </div>
+            <div class="reaction-ms" id="reactionMsLabel"></div>
+            <button class="btn full" id="sendToChainBtn" disabled>
+              <span class="icon">🔐</span>
+              <span id="sendToChainLabel">Encrypt & send to contract</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- RIGHT: result -->
+      <section class="card result">
+        <div class="section-title">
+          <span class="icon">🏅</span><span>Your private category</span>
+        </div>
+
+        <div class="result-top">
+          <div class="pill-row">
+            <span class="tier-pill current">
+              <span>Current result:</span>
+              <strong id="tierChipLabel">No result yet</strong>
+            </span>
+          </div>
+          <div class="pill-row">
+            <span class="tier-pill gold">Gold ≤ fastest threshold</span>
+            <span class="tier-pill silver">Silver ≤ mid threshold</span>
+            <span class="tier-pill bronze">Bronze ≤ slowest threshold</span>
           </div>
         </div>
 
-        <div class="card">
-          <div class="hd"><b>Admin · Set encrypted policy</b> <span class="pill" id="isOwnerPill" style="margin-left:8px">owner: —</span></div>
-          <div class="bd grid cols-2">
-            <div><label>Plan ID</label><input id="p-plan" type="number" min="1" value="1" /></div>
-            <div><label>minKycLevel (u8)</label><input id="p-kyc" type="number" min="0" max="255" value="2" /></div>
-            <div><label>minTenureDays (u16)</label><input id="p-tenure" type="number" min="0" max="65535" value="30" /></div>
-            <div><label>minTradeVolumeUsd (u32)</label><input id="p-volume" type="number" min="0" max="4294967295" value="1000" /></div>
-            <div><label>minPassRules (u8)</label><input id="p-pass" type="number" min="1" max="3" value="2" /></div>
-            <div style="display:flex;align-items:flex-end"><button class="btn" id="btn-set-policy">Set encrypted policy</button></div>
-          </div>
+        <div class="tier-label">
+          <span class="emoji" id="tierEmoji">⏳</span>
+          <span id="tierText">Play the game and send your first result.</span>
         </div>
+        <div class="tier-description" id="tierDescription">
+          Once you submit an encrypted reaction time, you’ll see your private tier here.
+        </div>
+
+        <button class="btn secondary full" id="refreshResultBtn">
+          <span class="icon">🔁</span>
+          <span>Refresh & decrypt last result</span>
+        </button>
+      </section>
+    </div>
+
+    <!-- Admin panel (owner only) -->
+    <section class="card admin-card" id="adminCard" style="display:none;">
+      <div class="section-title" style="margin-bottom:4px;">
+        <span class="icon">🛠</span><span>Admin: configure encrypted thresholds</span>
       </div>
+      <div style="font-size:12px; color:var(--text-muted);">
+        Values are local milliseconds. They are encrypted in your browser and sent
+        to <code>setReactionTiers</code>. Recommended: Gold ≤ Silver ≤ Bronze.
+      </div>
+
+      <div class="admin-grid">
+        <div class="admin-field">
+          <label for="goldInput">Gold max (ms)</label>
+          <input id="goldInput" type="number" min="0" max="65535" placeholder="e.g. 200" />
+        </div>
+        <div class="admin-field">
+          <label for="silverInput">Silver max (ms)</label>
+          <input id="silverInput" type="number" min="0" max="65535" placeholder="e.g. 300" />
+        </div>
+        <div class="admin-field">
+          <label for="bronzeInput">Bronze max (ms)</label>
+          <input id="bronzeInput" type="number" min="0" max="65535" placeholder="e.g. 450" />
+        </div>
+        <button class="btn secondary" id="setTiersBtn">
+          <span class="icon">🔐</span><span id="setTiersLabel">Encrypt & set thresholds</span>
+        </button>
+      </div>
+      <div class="admin-status" id="adminStatus"></div>
     </section>
 
-    <aside class="card">
-      <div class="hd"><b>Contract</b></div>
-      <div class="bd grid">
-        <div class="kv"><div class="muted">Address:</div><div class="mono" id="caddr">—</div></div>
-        <div class="kv"><div class="muted">Owner:</div><div class="mono" id="cowner">—</div></div>
-        <div class="kv"><div class="muted">Relayer:</div><div id="relayerState">not ready</div></div>
-        <div class="sep"></div>
-        <div class="kv"><div class="muted">Your account:</div><div class="mono" id="acc">—</div></div>
-        <div class="kv"><div class="muted">Eligibility handle:</div><div class="mono" id="lastHandle">—</div></div>
-      </div>
-    </aside>
-
-    <div class="footer">ZAMA FHEVM · Partner Tariff Gate — Single-file demo (Sepolia)</div>
+    <div class="footer">
+      <span>
+        Built with Zama FHEVM • Only encrypted values reach the chain.
+      </span>
+      <span>
+        Docs:
+        <a href="https://docs.zama.ai/protocol/solidity-guides/smart-contract/operations/" target="_blank">Solidity FHE</a>
+        ·
+        <a href="https://docs.zama.ai/protocol/relayer-sdk-guides/" target="_blank">Relayer SDK</a>
+      </span>
+    </div>
   </div>
 
   <script type="module">
-    // ===== Net & endpoints =====
-    const CONTRACT_ADDRESS = '0x7F658EDaddFC0dfb8a68021dD8855d1B34a36CC3';
-    const CHAIN_ID_HEX = '0xaa36a7';
+    import { BrowserProvider, Contract } from "https://cdn.jsdelivr.net/npm/ethers@6.15.0/+esm";
+    import {
+      initSDK,
+      createInstance,
+      SepoliaConfig,
+      generateKeypair
+    } from "https://cdn.zama.org/relayer-sdk-js/0.3.0-5/relayer-sdk-js.js";
 
-    // Try to use local reverse-proxy if available, else direct Zama endpoints
-    const ORIGIN = window.location.origin;
-    const HAS_LOCAL_PROXY = ORIGIN.includes('localhost:3443') || ORIGIN.includes('127.0.0.1:3443');
-    const RELAYER_URL = HAS_LOCAL_PROXY ? `${ORIGIN}/relayer` : 'https://relayer.testnet.zama.org';
-    const GATEWAY_URL = HAS_LOCAL_PROXY ? `${ORIGIN}/gateway` : 'https://gateway.testnet.zama.org';
-
-    const $ = (q)=>document.querySelector(q);
-    const btnConnect=$('#btn-connect'), netPill=$('#net-pill'), isOwnerPill=$('#isOwnerPill');
-    const caddrEl=$('#caddr'), cownerEl=$('#cowner'), accEl=$('#acc'), relayerStateEl=$('#relayerState');
-    const planIdEl=$('#planId'), kycEl=$('#kyc'), tenureEl=$('#tenure'), volumeEl=$('#volume'), btnEval=$('#btn-eval');
-    const decisionBox=$('#decisionBox'), handleOut=$('#handleOut'), btnCopy=$('#btn-copy');
-    const btnMakePublic=$('#btn-make-public'), btnPublicDecrypt=$('#btn-public-decrypt'), btnUserDecrypt=$('#btn-user-decrypt');
-    const pPlanEl=$('#p-plan'), pKycEl=$('#p-kyc'), pTenureEl=$('#p-tenure'), pVolEl=$('#p-volume'), pPassEl=$('#p-pass'), btnSetPolicy=$('#btn-set-policy');
-    const lastHandleEl=$('#lastHandle');
-
-    const [{ BrowserProvider, Contract }, relayerSdk] = await Promise.all([
-      import('https://cdn.jsdelivr.net/npm/ethers@6.15.0/+esm'),
-      import('https://cdn.zama.org/relayer-sdk-js/0.3.0-5/relayer-sdk-js.js')
-    ]);
-    const { initSDK, createInstance, SepoliaConfig, generateKeypair } = relayerSdk;
+    // Init Relayer SDK (WASM/workers)
     await initSDK();
 
-    const IS_HTTPS = location.protocol === 'https:';
-    if(!IS_HTTPS){ relayerStateEl.innerHTML = '<span class="bad">not https (signed decrypt disabled)</span>'; btnUserDecrypt.disabled = true; }
+    /* -------------------------- logging helpers (console only) -------------------------- */
 
-    const ABI = [
-      { inputs:[], stateMutability:'view', type:'function', name:'owner', outputs:[{type:'address'}] },
-      { inputs:[{name:'planId',type:'uint256'}], stateMutability:'view', type:'function', name:'hasPolicy', outputs:[{type:'bool'}] },
-      { inputs:[{name:'planId',type:'uint256'},{name:'kycLevelExt',type:'bytes32'},{name:'tenureDaysExt',type:'bytes32'},{name:'volumeUsdExt',type:'bytes32'},{name:'proof',type:'bytes'}], name:'evaluateEligibilityEncrypted', outputs:[{type:'bytes32'}], stateMutability:'nonpayable', type:'function' },
-      { inputs:[{name:'planId',type:'uint256'},{name:'minKycLevelExt',type:'bytes32'},{name:'minTenureDaysExt',type:'bytes32'},{name:'minTradeVolumeUsdExt',type:'bytes32'},{name:'minPassRulesExt',type:'bytes32'},{name:'proof',type:'bytes'}], name:'setPolicyEncrypted', outputs:[], stateMutability:'nonpayable', type:'function' },
-      { inputs:[{name:'planId',type:'uint256'}], name:'getMyEligibilityHandle', outputs:[{type:'bytes32'}], stateMutability:'view', type:'function' },
-      { inputs:[{name:'planId',type:'uint256'}], name:'makeMyEligibilityPublic', outputs:[], stateMutability:'nonpayable', type:'function' }
+    const safeStringify = (obj) => {
+  try {
+    let s = JSON.stringify(
+      obj,
+      (k, v) => (typeof v === "bigint" ? v.toString() + "n" : v)
+    );
+    // при желании можно чуть подрезать слишком длинные логи
+    if (s.length > 300) s = s.slice(0, 300) + "…";
+    return s;
+  } catch {
+    try {
+      return String(obj);
+    } catch {
+      return "[Unserializable value]";
+    }
+  }
+};
+
+
+    function appendLog(...parts) {
+      const msg = parts
+        .map((x) =>
+          typeof x === "string"
+            ? x
+            : (() => {
+                try {
+                  return safeStringify(x);
+                } catch {
+                  return String(x);
+                }
+              })()
+        )
+        .join(" ");
+      console.log("[log]", msg);
+    }
+
+    function normalizeDecryptedValue(v) {
+      if (v == null) return null;
+      if (typeof v === "boolean") return v ? 1n : 0n;
+      if (typeof v === "bigint" || typeof v === "number") return BigInt(v);
+      if (typeof v === "string") return BigInt(v);
+      return BigInt(v.toString());
+    }
+
+    function shortAddress(addr) {
+      if (!addr) return "—";
+      return addr.slice(0, 6) + "…" + addr.slice(-4);
+    }
+
+    function normalizeChainId(id) {
+      if (!id) return "";
+      const s = String(id);
+      if (/^\d+$/.test(s)) return "0x" + BigInt(s).toString(16);
+      return s.toLowerCase();
+    }
+
+    /* ----------------------------- FHE core / config ---------------------------- */
+
+    const DEFAULT_CHAIN_ID_HEX = "0xaa36a7"; // Sepolia
+    const CONTRACT_ADDRESS = "0x336AD8895440fB523EEA1573A8f13c0d7C5aE130";
+
+    // ABI with setReactionTiers + view functions
+    const CONTRACT_ABI = [
+      {
+        inputs: [],
+        name: "owner",
+        outputs: [{ internalType: "address", name: "", type: "address" }],
+        stateMutability: "view",
+        type: "function"
+      },
+      {
+        inputs: [
+          { internalType: "bytes32", name: "encReactionMs", type: "bytes32" },
+          { internalType: "bytes", name: "proof", type: "bytes" }
+        ],
+        name: "submitEncryptedReaction",
+        outputs: [],
+        stateMutability: "nonpayable",
+        type: "function"
+      },
+      {
+        inputs: [],
+        name: "getMyCategoryHandle",
+        outputs: [
+          { internalType: "bytes32", name: "tierHandle", type: "bytes32" },
+          { internalType: "bool", name: "decided", type: "bool" }
+        ],
+        stateMutability: "view",
+        type: "function"
+      },
+      {
+        inputs: [],
+        name: "makeMyCategoryPublic",
+        outputs: [],
+        stateMutability: "nonpayable",
+        type: "function"
+      },
+      {
+        inputs: [{ internalType: "address", name: "player", type: "address" }],
+        name: "getPlayerMeta",
+        outputs: [
+          { internalType: "bool", name: "decided", type: "bool" },
+          { internalType: "bool", name: "categoryPublic", type: "bool" }
+        ],
+        stateMutability: "view",
+        type: "function"
+      },
+      {
+        inputs: [
+          { internalType: "uint256", name: "programId", type: "uint256" }
+        ],
+        name: "getTierPolicyHandles",
+        outputs: [
+          { internalType: "bytes32", name: "maxGoldHandle", type: "bytes32" },
+          { internalType: "bytes32", name: "maxSilverHandle", type: "bytes32" },
+          { internalType: "bytes32", name: "maxBronzeHandle", type: "bytes32" },
+          { internalType: "bool", name: "initialized", type: "bool" }
+        ],
+        stateMutability: "view",
+        type: "function"
+      },
+      {
+        inputs: [
+          { internalType: "bytes32", name: "encMaxGoldMs", type: "bytes32" },
+          { internalType: "bytes32", name: "encMaxSilverMs", type: "bytes32" },
+          { internalType: "bytes32", name: "encMaxBronzeMs", type: "bytes32" },
+          { internalType: "bytes", name: "proof", type: "bytes" }
+        ],
+        name: "setReactionTiers",
+        outputs: [],
+        stateMutability: "nonpayable",
+        type: "function"
+      }
     ];
 
-    let provider=null, signer=null, contract=null, relayer=null;
-    let currentAccount=null, ownerAddr=null;
-
-    const tag=(t,ok)=>`<span class="tag ${ok?'ok':'bad'}">${t}</span>`;
-    const setDecision=(txt,ok=null)=>{
-      if(ok===true) decisionBox.innerHTML=`Decision: ${tag('ELIGIBLE',true)} <span class="muted small">(${txt})</span>`;
-      else if(ok===false) decisionBox.innerHTML=`Decision: ${tag('NOT ELIGIBLE',false)} <span class="muted small">(${txt})</span>`;
-      else decisionBox.innerHTML='Decision: <span class="tag">n/a</span>';
+    const _config = {
+      contractAddress: null,
+      abi: null,
+      chainIdHex: DEFAULT_CHAIN_ID_HEX,
+      relayerUrl: null,
+      gatewayUrl: null,
+      relayerNetworkConfig: SepoliaConfig
     };
-    const short=(a)=>a?a.slice(0,6)+'…'+a.slice(-4):'—';
 
-    async function ensureSepolia(){
-      const id = await window.ethereum.request({ method:'eth_chainId' });
-      netPill.textContent = 'Network: ' + (id||'—');
-      if(id?.toLowerCase()!==CHAIN_ID_HEX){
-        try{ await window.ethereum.request({ method:'wallet_switchEthereumChain', params:[{ chainId: CHAIN_ID_HEX }] }); }catch(e){}
+    const _state = {
+      provider: null,
+      signer: null,
+      contract: null,
+      relayer: null,
+      account: null,
+      owner: null
+    };
+
+    function detectRelayerUrls() {
+      const origin = window.location.origin;
+      const hasLocalProxy =
+        origin.includes("localhost:3443") || origin.includes("127.0.0.1:3443");
+      if (hasLocalProxy) {
+        return {
+          relayerUrl: origin + "/relayer",
+          gatewayUrl: origin + "/gateway"
+        };
       }
-      const now = await window.ethereum.request({ method:'eth_chainId' });
-      netPill.textContent = 'Network: ' + (now||'—');
+      return {
+        relayerUrl: "https://relayer.testnet.zama.org",
+        gatewayUrl: "https://gateway.testnet.zama.org"
+      };
     }
 
-    async function connect(){
-      if(!window.ethereum?.request){ alert('Install MetaMask'); return; }
-      await window.ethereum.request({ method:'eth_requestAccounts' });
-      await ensureSepolia();
+    async function ensureNetwork(chainIdHex) {
+      if (!window.ethereum?.request) return false;
+      let current = normalizeChainId(
+        await window.ethereum.request({ method: "eth_chainId" }).catch(() => null)
+      );
+      if (current === chainIdHex) return true;
 
-      provider = new BrowserProvider(window.ethereum);
-      signer = await provider.getSigner();
-      currentAccount = await signer.getAddress();
-      accEl.textContent = short(currentAccount);
-
-      contract = new Contract(CONTRACT_ADDRESS, ABI, signer);
-      caddrEl.textContent = CONTRACT_ADDRESS;
-
-      try{ ownerAddr = await contract.owner(); cownerEl.textContent = short(ownerAddr); }
-      catch{ ownerAddr = null; cownerEl.textContent = '—'; }
-      isOwnerPill.textContent = 'owner: ' + (ownerAddr && currentAccount && ownerAddr.toLowerCase()===currentAccount.toLowerCase() ? 'yes' : 'no');
-
-      relayer = await createInstance({ ...SepoliaConfig, relayerUrl: RELAYER_URL, gatewayUrl: GATEWAY_URL, network: window.ethereum, debug: true });
-      relayerStateEl.textContent = 'ready' + (IS_HTTPS ? '' : ' (limited)') + (HAS_LOCAL_PROXY ? ' (proxy)' : '');
-      btnConnect.textContent = 'Disconnect';
+      try {
+        await window.ethereum.request({
+          method: "wallet_switchEthereumChain",
+          params: [{ chainId: chainIdHex }]
+        });
+      } catch (e) {
+        if (e && e.code === 4902) {
+          await window.ethereum.request({
+            method: "wallet_addEthereumChain",
+            params: [
+              {
+                chainId: chainIdHex,
+                chainName: "Sepolia",
+                nativeCurrency: { name: "Sepolia ETH", symbol: "SEP", decimals: 18 },
+                rpcUrls: ["https://rpc.sepolia.org"],
+                blockExplorerUrls: ["https://sepolia.etherscan.io"]
+              }
+            ]
+          });
+          await window.ethereum.request({
+            method: "wallet_switchEthereumChain",
+            params: [{ chainId: chainIdHex }]
+          });
+        } else {
+          appendLog("Network switch error:", e?.message || e);
+          throw e;
+        }
+      }
+      const after = normalizeChainId(
+        await window.ethereum.request({ method: "eth_chainId" }).catch(() => null)
+      );
+      return after === chainIdHex;
     }
 
-    function disconnect(){
-      provider=signer=contract=relayer=null; currentAccount=null;
-      accEl.textContent='—'; btnConnect.textContent='Connect'; relayerStateEl.textContent='not ready';
-      setDecision(''); lastHandleEl.textContent='—'; handleOut.value='';
+    async function configure({ contractAddress, abi } = {}) {
+      if (!contractAddress || !abi) {
+        throw new Error("configure(): contractAddress and abi are required");
+      }
+      _config.contractAddress = contractAddress;
+      _config.abi = abi;
+      const urls = detectRelayerUrls();
+      _config.relayerUrl = urls.relayerUrl;
+      _config.gatewayUrl = urls.gatewayUrl;
+      appendLog("Configured core", _config);
     }
 
-    btnConnect.addEventListener('click', async()=>{ if(signer) disconnect(); else await connect(); });
-    btnCopy.addEventListener('click', async()=>{ if(!handleOut.value) return; await navigator.clipboard.writeText(handleOut.value); btnCopy.textContent='Copied'; setTimeout(()=>btnCopy.textContent='Copy',900); });
+    async function connectWallet() {
+      if (!_config.contractAddress || !_config.abi) {
+        throw new Error("Call configure() first");
+      }
+      if (!window.ethereum?.request) {
+        throw new Error("No EIP-1193 provider (MetaMask not found)");
+      }
 
-    // ===== Helpers for decrypt =====
-    function normalizePublicDecryptResult(out, handleHex){
-      if(Array.isArray(out)){
-        const first = out[0];
-        return typeof first === 'string' ? first : (first?.value ?? null);
+      await ensureNetwork(_config.chainIdHex);
+
+      const provider = new BrowserProvider(window.ethereum);
+      await provider.send("eth_requestAccounts", []);
+      const signer = await provider.getSigner();
+      const account = await signer.getAddress();
+      const contract = new Contract(_config.contractAddress, _config.abi, signer);
+
+      const relayer = await createInstance({
+        ..._config.relayerNetworkConfig,
+        relayerUrl: _config.relayerUrl,
+        gatewayUrl: _config.gatewayUrl,
+        network: window.ethereum,
+        debug: true
+      });
+
+      _state.provider = provider;
+      _state.signer = signer;
+      _state.contract = contract;
+      _state.relayer = relayer;
+      _state.account = account;
+
+      try {
+        const owner = await contract.owner();
+        _state.owner = owner;
+      } catch {
+        _state.owner = null;
       }
-      if(out && typeof out==='object'){
-        const k = handleHex?.toLowerCase?.();
-        const v = out[handleHex] ?? out[k];
-        return (typeof v==='object' && v!==null && 'value' in v) ? v.value : v;
+
+      appendLog("Connected", { account, owner: _state.owner });
+
+      if (window.ethereum?.on) {
+        window.ethereum.on("accountsChanged", () => window.location.reload());
+        window.ethereum.on("chainChanged", () => window.location.reload());
       }
-      return null;
+      return { ..._state };
     }
 
-    async function smartDecrypt(handleHex, mode='auto'){
-      if(!relayer || !contract) throw new Error('Connect wallet first');
-      const pair = { handle: String(handleHex), contractAddress: CONTRACT_ADDRESS };
+    async function disconnectWallet() {
+      _state.provider = null;
+      _state.signer = null;
+      _state.contract = null;
+      _state.relayer = null;
+      _state.account = null;
+      _state.owner = null;
+      appendLog("Disconnected");
+    }
 
-      // 1) public (pairs)
-      if(mode==='auto' || mode==='public'){
-        try{
-          const out = await relayer.publicDecrypt([pair]);
-          const v = normalizePublicDecryptResult(out, String(handleHex));
-          if(v!=null) return BigInt(v)===1n;
-        }catch(e){ if(mode==='public') throw e; }
+    async function autoConnectIfAuthorized() {
+      if (!window.ethereum?.request) return false;
+      try {
+        const accs = await window.ethereum.request({ method: "eth_accounts" });
+        if (accs && accs.length) {
+          await connectWallet();
+          return true;
+        }
+      } catch (e) {
+        appendLog("autoConnectIfAuthorized error", e?.message || e);
+      }
+      return false;
+    }
 
-        // 2) public (handles only)
-        try{
-          const out2 = await relayer.publicDecrypt([String(handleHex)]);
-          const v2 = normalizePublicDecryptResult(out2, String(handleHex));
-          if(v2!=null) return BigInt(v2)===1n;
-        }catch(e){ if(mode==='public') throw e; }
+    function isOwner() {
+      if (!_state.account || !_state.owner) return false;
+      return _state.account.toLowerCase() === _state.owner.toLowerCase();
+    }
+
+    function randomSeed(modulus = 10000) {
+      const buf = new Uint32Array(1);
+      crypto.getRandomValues(buf);
+      const raw = BigInt(buf[0]);
+      const mod = BigInt(modulus);
+      const res = mod === 0n ? raw : raw % mod;
+      return Number(res);
+    }
+
+    async function encryptUint16(value) {
+      if (!_state.relayer || !_state.account || !_config.contractAddress) {
+        throw new Error("encryptUint16: relayer/account/contract not ready");
+      }
+      const n = Number(value);
+      if (!Number.isInteger(n) || n < 0 || n > 65535) {
+        throw new Error("encryptUint16: value must be in [0,65535]");
+      }
+      const input = _state.relayer.createEncryptedInput(
+        _config.contractAddress,
+        _state.account
+      );
+      input.add16(n);
+      const { handles, inputProof } = await input.encrypt();
+      appendLog("Encrypted uint16", { value: n, handle: handles[0] });
+      return { handles, proof: inputProof };
+    }
+
+    async function encryptThreeUint16s(gold, silver, bronze) {
+      if (!_state.relayer || !_state.account || !_config.contractAddress) {
+        throw new Error("encryptThreeUint16s: relayer/account/contract not ready");
+      }
+      const nums = [gold, silver, bronze].map((v) => {
+        const n = Number(v);
+        if (!Number.isInteger(n) || n < 0 || n > 65535) {
+          throw new Error("thresholds must be in [0,65535]");
+        }
+        return n;
+      });
+
+      const input = _state.relayer.createEncryptedInput(
+        _config.contractAddress,
+        _state.account
+      );
+      input.add16(nums[0]);
+      input.add16(nums[1]);
+      input.add16(nums[2]);
+
+      const { handles, inputProof } = await input.encrypt();
+      appendLog("Encrypted thresholds", { nums, handles });
+      return { handles, proof: inputProof };
+    }
+
+    function buildValuePicker(out, pairs) {
+      let map = {};
+      if (out && typeof out === "object") {
+        if (Array.isArray(out.clearValues) && pairs && pairs.length) {
+          pairs.forEach((p, i) => {
+            const h = String(p.handle || p).toLowerCase();
+            map[h] = out.clearValues[i];
+          });
+        }
+        if (!Object.keys(map).length &&
+          typeof out.abiEncodedClearValues === "string" &&
+          pairs &&
+          pairs.length
+        ) {
+          const raw = out.abiEncodedClearValues.startsWith("0x")
+            ? out.abiEncodedClearValues.slice(2)
+            : out.abiEncodedClearValues;
+          const values = [];
+          for (let i = 0; i + 64 <= raw.length; i += 64) {
+            const chunk = "0x" + raw.slice(i, i + 64);
+            try { values.push(BigInt(chunk)); } catch { values.push(0n); }
+          }
+          pairs.forEach((p, i) => {
+            const h = String(p.handle || p).toLowerCase();
+            if (values[i] !== undefined) map[h] = values[i];
+          });
+        }
+        if (!Object.keys(map).length) {
+          for (const [k, v] of Object.entries(out)) {
+            map[k.toLowerCase()] = v;
+          }
+        }
+      }
+      return (handle) => {
+        if (!handle) return null;
+        const k = String(handle).toLowerCase();
+        const v = map[k];
+        if (v === undefined) return null;
+        return normalizeDecryptedValue(v);
+      };
+    }
+
+    async function userDecryptMany(pairs) {
+      if (!_state.relayer || !_state.signer || !_config.contractAddress) {
+        throw new Error("userDecryptMany: not ready");
+      }
+      const kp = await generateKeypair();
+      const startTs = Math.floor(Date.now() / 1000).toString();
+      const daysValid = "7";
+
+      const eip = _state.relayer.createEIP712(
+        kp.publicKey,
+        [_config.contractAddress],
+        startTs,
+        daysValid
+      );
+
+      const signature = await _state.signer.signTypedData(
+        eip.domain,
+        { UserDecryptRequestVerification: eip.types.UserDecryptRequestVerification },
+        eip.message
+      );
+
+      const userAddr = await _state.signer.getAddress();
+
+      const out = await _state.relayer.userDecrypt(
+        pairs,
+        kp.privateKey,
+        kp.publicKey,
+        signature.replace(/^0x/, ""),
+        [_config.contractAddress],
+        userAddr,
+        startTs,
+        daysValid
+      );
+      appendLog("userDecrypt result", out);
+      return { out, pairs };
+    }
+
+    async function userDecryptHandles(handles) {
+      const normalized = handles.map((h) =>
+        typeof h === "string"
+          ? { handle: h, contractAddress: _config.contractAddress }
+          : {
+              handle: h.handle,
+              contractAddress: h.contractAddress || _config.contractAddress
+            }
+      );
+      const { out, pairs } = await userDecryptMany(normalized);
+      const pick = buildValuePicker(out, pairs);
+      return { pick, raw: out, pairs };
+    }
+
+    /* --------------------------- UI elements & state --------------------------- */
+
+    const addressBadge = document.getElementById("addressBadge");
+    const connectBtn = document.getElementById("connectBtn");
+    const connectBtnLabel = document.getElementById("connectBtnLabel");
+    const disconnectBtn = document.getElementById("disconnectBtn");
+    const addressChip = document.getElementById("addressChip");
+
+    const reactionPad = document.getElementById("reactionPad");
+    const padMainText = document.getElementById("padMainText");
+    const padSubText = document.getElementById("padSubText");
+    const reactionStatus = document.getElementById("reactionStatus");
+    const reactionMsLabel = document.getElementById("reactionMsLabel");
+    const sendToChainBtn = document.getElementById("sendToChainBtn");
+    const sendToChainLabel = document.getElementById("sendToChainLabel");
+    const startTestBtn = document.getElementById("startTestBtn");
+
+    const tierChipLabel = document.getElementById("tierChipLabel");
+    const tierEmoji = document.getElementById("tierEmoji");
+    const tierText = document.getElementById("tierText");
+    const tierDescription = document.getElementById("tierDescription");
+    const refreshResultBtn = document.getElementById("refreshResultBtn");
+
+    const adminCard = document.getElementById("adminCard");
+    const goldInput = document.getElementById("goldInput");
+    const silverInput = document.getElementById("silverInput");
+    const bronzeInput = document.getElementById("bronzeInput");
+    const setTiersBtn = document.getElementById("setTiersBtn");
+    const setTiersLabel = document.getElementById("setTiersLabel");
+    const adminStatus = document.getElementById("adminStatus");
+
+    let gameState = "idle"; // idle | waiting | ready | done | too-early
+    let waitTimeoutId = null;
+    let greenTimestamp = 0;
+    let lastReactionMs = null;
+    let busy = false;
+    let lastTierHandle = null;
+
+    function setGameVisualState(state) {
+      reactionPad.classList.remove("pad-idle", "pad-waiting", "pad-ready", "pad-too-early", "pad-done");
+      if (state === "waiting") reactionPad.classList.add("pad-waiting");
+      else if (state === "ready") reactionPad.classList.add("pad-ready");
+      else if (state === "too-early") reactionPad.classList.add("pad-too-early");
+      else if (state === "done") reactionPad.classList.add("pad-done");
+      else reactionPad.classList.add("pad-idle");
+    }
+
+    function resetGameUI() {
+      clearTimeout(waitTimeoutId);
+      waitTimeoutId = null;
+      gameState = "idle";
+      lastReactionMs = null;
+      setGameVisualState("idle");
+      padMainText.textContent = "Tap to get ready";
+      padSubText.textContent = "Wait for green, then tap as fast as you can.";
+      reactionStatus.textContent = "Waiting for you to start the test.";
+      reactionMsLabel.textContent = "";
+      sendToChainBtn.disabled = true;
+      sendToChainLabel.textContent = "Encrypt & send to contract";
+    }
+
+    function updateConnectionUI() {
+      if (_state.account) {
+        addressBadge.textContent = shortAddress(_state.account);
+        connectBtnLabel.textContent = "Connected";
+        connectBtn.style.background = "#16a34a";
+        connectBtn.style.boxShadow = "0 14px 30px rgba(22, 163, 74, 0.45)";
+        disconnectBtn.style.display = "inline-flex";
+        addressChip.classList.add("highlight");
+        adminCard.style.display = isOwner() ? "block" : "none";
+      } else {
+        addressBadge.textContent = "Not connected";
+        connectBtnLabel.textContent = "Connect Wallet";
+        connectBtn.style.background = "#0f172a";
+        connectBtn.style.boxShadow = "0 14px 30px rgba(15, 23, 42, 0.35)";
+        disconnectBtn.style.display = "none";
+        addressChip.classList.remove("highlight");
+        adminCard.style.display = "none";
+      }
+    }
+
+    function requireWallet() {
+      if (!_state.account) {
+        alert("Please connect your wallet first.");
+        throw new Error("Wallet not connected");
+      }
+    }
+
+    function startReactionTest() {
+      requireWallet();
+      resetGameUI();
+      gameState = "waiting";
+      setGameVisualState("waiting");
+      padMainText.textContent = "Get ready…";
+      padSubText.textContent = "Don't tap yet. Wait for green!";
+      reactionStatus.textContent = "Get ready. Green is coming…";
+      appendLog("Reaction test started");
+
+      const delay = 1600 + randomSeed(2000);
+      waitTimeoutId = setTimeout(() => {
+        gameState = "ready";
+        setGameVisualState("ready");
+        padMainText.textContent = "Go, go, go!";
+        padSubText.textContent = "Tap the circle.";
+        reactionStatus.textContent = "Go, go, go! Tap the circle.";
+        greenTimestamp = performance.now();
+      }, delay);
+    }
+
+    function handlePadClick() {
+      if (busy) return;
+      if (!_state.account) {
+        alert("Please connect your wallet first.");
+        return;
       }
 
-      // 3) signed userDecrypt
-      if(mode!=='public'){
-        if(!IS_HTTPS) throw new Error('Open over HTTPS to use signed decrypt');
-        const kp = await generateKeypair();
-        const startTs = Math.floor(Date.now()/1000).toString();
-        const daysValid = '7';
-        const eip = relayer.createEIP712(kp.publicKey, [CONTRACT_ADDRESS], startTs, daysValid);
-        const sig = await signer.signTypedData(eip.domain, { UserDecryptRequestVerification: eip.types.UserDecryptRequestVerification }, eip.message);
-        const out = await relayer.userDecrypt(
-          [pair],
-          kp.privateKey, kp.publicKey, sig.replace('0x',''),
-          [CONTRACT_ADDRESS], await signer.getAddress(), startTs, daysValid
+      if (gameState === "idle") {
+        startReactionTest();
+        return;
+      }
+
+      if (gameState === "waiting") {
+        clearTimeout(waitTimeoutId);
+        waitTimeoutId = null;
+        gameState = "too-early";
+        setGameVisualState("too-early");
+        padMainText.textContent = "Too soon!";
+        padSubText.textContent = "Wait for green next time.";
+        reactionStatus.textContent =
+          "You clicked before it turned green. Try again.";
+        reactionMsLabel.textContent = "";
+        sendToChainBtn.disabled = true;
+        setTimeout(() => resetGameUI(), 900);
+        return;
+      }
+
+      if (gameState === "ready") {
+        const now = performance.now();
+        lastReactionMs = Math.max(0, Math.round(now - greenTimestamp));
+        gameState = "done";
+        setGameVisualState("done");
+        padMainText.textContent = "Nice!";
+        padSubText.textContent = "Now encrypt & send this time to the contract.";
+        reactionStatus.textContent =
+          "Local reaction measured. Ready to encrypt and send.";
+        reactionMsLabel.innerHTML =
+          lastReactionMs.toString() +
+          '<span class="unit">ms (local only)</span>';
+        sendToChainBtn.disabled = false;
+        appendLog("Reaction measured", { ms: lastReactionMs });
+        return;
+      }
+
+      if (gameState === "done" || gameState === "too-early") {
+        startReactionTest();
+      }
+    }
+
+    function mapTierToUi(value) {
+      const n = Number(value ?? 0);
+      if (!Number.isFinite(n)) {
+        return { label: "Unknown", emoji: "❓", desc: "" };
+      }
+      if (n <= 0) {
+        return {
+          label: "Too slow",
+          emoji: "🐢",
+          desc:
+            "Your encrypted reaction time did not cross any of the thresholds."
+        };
+      }
+      if (n === 1) {
+        return {
+          label: "Bronze",
+          emoji: "🥉",
+          desc:
+            "You're within the slowest encrypted threshold. Bronze means you're in."
+        };
+      }
+      if (n === 2) {
+        return {
+          label: "Silver",
+          emoji: "🥈",
+          desc:
+            "Nice reflexes! You beat the encrypted Silver threshold."
+        };
+      }
+      if (n >= 3) {
+        return {
+          label: "Gold",
+          emoji: "🥇",
+          desc:
+            "Lightning fast! You're under the encrypted Gold threshold."
+        };
+      }
+      return { label: "Unknown", emoji: "❓", desc: "" };
+    }
+
+    async function refreshAndDecryptTier() {
+      try {
+        requireWallet();
+        const [tierHandle, decided] =
+          await _state.contract.getMyCategoryHandle();
+        if (!decided) {
+          tierChipLabel.textContent = "No result yet";
+          tierEmoji.textContent = "⏳";
+          tierText.textContent = "Play the game and send your first result.";
+          tierDescription.textContent =
+            "Once you submit an encrypted reaction time, you’ll see your private tier here.";
+          return;
+        }
+
+        lastTierHandle = tierHandle;
+        appendLog("Fetched tierHandle", tierHandle);
+
+        const { pick } = await userDecryptHandles([tierHandle]);
+        const dec = pick(tierHandle);
+        appendLog("Decrypted tier", dec?.toString?.());
+
+        const ui = mapTierToUi(dec ?? 0n);
+        tierChipLabel.textContent = ui.label;
+        tierEmoji.textContent = ui.emoji;
+        tierText.textContent = `Your private category: ${ui.label}`;
+        tierDescription.textContent = ui.desc;
+        reactionStatus.textContent =
+          "Tier decrypted locally. Contract never saw the plaintext.";
+      } catch (e) {
+        appendLog("refreshAndDecryptTier error", e?.message || e);
+        alert("Failed to decrypt your tier. Check console for details.");
+      }
+    }
+
+    async function runEncryptedFlow() {
+      try {
+        requireWallet();
+        if (lastReactionMs == null) {
+          alert("Play the reaction game first.");
+          return;
+        }
+        busy = true;
+        sendToChainBtn.disabled = true;
+        startTestBtn.disabled = true;
+        sendToChainLabel.textContent = "Encrypting & sending…";
+
+        const enc = await encryptUint16(lastReactionMs);
+
+        appendLog("Calling submitEncryptedReaction…");
+        const tx = await _state.contract.submitEncryptedReaction(
+          enc.handles[0],
+          enc.proof
         );
-        const picked = out[String(handleHex)] ?? out[String(handleHex).toLowerCase()];
-        if(picked==null) throw new Error('userDecrypt returned empty');
-        return BigInt(picked)===1n;
-      }
+        appendLog("Tx sent", tx.hash);
+        reactionStatus.textContent = "Waiting for transaction confirmation…";
 
-      throw new Error('Decrypt failed');
+        const receipt = await tx.wait();
+        appendLog("Tx mined", { blockNumber: receipt.blockNumber });
+
+        reactionStatus.textContent =
+          "On-chain evaluation done. Decrypting your tier…";
+
+        await refreshAndDecryptTier();
+      } catch (e) {
+        const msg = e?.shortMessage || e?.message || String(e);
+        appendLog("Error in encrypted flow", msg);
+        if (msg.includes("Tiers not configured")) {
+          alert(
+            "Tiers are not configured yet. Connect with the contract owner and use the admin panel to set Gold / Silver / Bronze thresholds."
+          );
+        } else {
+          alert("Something went wrong. Check console for details.");
+        }
+      } finally {
+        busy = false;
+        sendToChainLabel.textContent = "Encrypt & send to contract";
+        startTestBtn.disabled = false;
+      }
     }
 
-    // === Encrypt & Evaluate (NO auto-decrypt earlier; now we auto-try) ===
-    btnEval.addEventListener('click', async()=>{
-      try{
-        if(!signer || !contract || !relayer) throw new Error('Connect wallet first');
-        const planId = BigInt(planIdEl.value||'0');
-        const kyc = Number(kycEl.value||'0')|0;
-        const tenure = Number(tenureEl.value||'0')|0;
-        const volume = Number(volumeEl.value||'0')|0;
-        if(planId<=0n) throw new Error('Bad planId');
+    async function setTiers() {
+      try {
+        requireWallet();
+        if (!isOwner()) {
+          alert("Only the contract owner can set thresholds.");
+          return;
+        }
+        const gold = goldInput.value;
+        const silver = silverInput.value;
+        const bronze = bronzeInput.value;
+        if (gold === "" || silver === "" || bronze === "") {
+          alert("Fill in all three thresholds.");
+          return;
+        }
 
-        setDecision('encrypting …');
-        const enc = relayer.createEncryptedInput(CONTRACT_ADDRESS, currentAccount);
-        enc.add8(kyc); enc.add16(tenure); enc.add32(volume);
-        const { handles, inputProof } = await enc.encrypt();
+        busy = true;
+        setTiersBtn.disabled = true;
+        setTiersLabel.textContent = "Encrypting & setting…";
+        adminStatus.textContent = "Encrypting thresholds in browser…";
 
-        const tx = await contract.evaluateEligibilityEncrypted(planId, handles[0], handles[1], handles[2], inputProof);
+        const enc = await encryptThreeUint16s(gold, silver, bronze);
+
+        adminStatus.textContent = "Sending setReactionTiers transaction…";
+        const tx = await _state.contract.setReactionTiers(
+          enc.handles[0],
+          enc.handles[1],
+          enc.handles[2],
+          enc.proof
+        );
+        appendLog("setReactionTiers tx sent", tx.hash);
         await tx.wait();
+        adminStatus.textContent = "Thresholds updated on-chain.";
+      } catch (e) {
+        appendLog("setTiers error", e?.message || e);
+        adminStatus.textContent = "Failed to set thresholds. See console.";
+        alert("Failed to set thresholds. Check console for details.");
+      } finally {
+        busy = false;
+        setTiersBtn.disabled = false;
+        setTiersLabel.textContent = "Encrypt & set thresholds";
+      }
+    }
 
-        const h = await contract.getMyEligibilityHandle(planId);
-        handleOut.value = h; lastHandleEl.textContent = h;
+    /* ------------------------------ wiring events ------------------------------ */
 
-        // AUTO decrypt cascade right after evaluation
-        try{
-          const ok = await smartDecrypt(h, 'auto');
-          setDecision('auto decrypt', ok);
-        }catch(e){ setDecision('stored handle — use buttons to decrypt'); }
-      }catch(e){ console.error(e); alert(e?.message||'Failed'); setDecision('error'); }
+    connectBtn.addEventListener("click", async () => {
+      try {
+        if (_state.account) {
+          await disconnectWallet();
+          updateConnectionUI();
+          return;
+        }
+        connectBtn.disabled = true;
+        connectBtnLabel.textContent = "Connecting…";
+        await connectWallet();
+        updateConnectionUI();
+      } catch (e) {
+        appendLog("connectWallet error", e?.message || e);
+        alert("Failed to connect wallet. Check console.");
+      } finally {
+        connectBtn.disabled = false;
+        connectBtnLabel.textContent = _state.account ? "Connected" : "Connect Wallet";
+      }
     });
 
-    // Make public (on-chain)
-    btnMakePublic.addEventListener('click', async()=>{
-      try{
-        if(!signer || !contract) throw new Error('Connect wallet first');
-        const planId = BigInt(planIdEl.value||'0');
-        const tx = await contract.makeMyEligibilityPublic(planId);
-        await tx.wait();
-        const h = await contract.getMyEligibilityHandle(planId);
-        handleOut.value = h; lastHandleEl.textContent = h;
-        setDecision('made public — now try Decrypt (public)');
-      }catch(e){ console.error(e); alert(e?.message||'Failed'); }
+    disconnectBtn.addEventListener("click", async () => {
+      await disconnectWallet();
+      updateConnectionUI();
     });
 
-    // === Replaced handlers: use smartDecrypt ===
-    btnPublicDecrypt.addEventListener('click', async()=>{
-      try{
-        const planId = BigInt(planIdEl.value||'0');
-        const h = handleOut.value || await contract.getMyEligibilityHandle(planId);
-        if(!h || String(h)==='0x'+'0'.repeat(64)) throw new Error('No decision handle. Evaluate first.');
-        const ok = await smartDecrypt(String(h), 'public');
-        setDecision('public decrypt', ok);
-      }catch(e){ console.error('public decrypt failed:', e); alert(e?.message||'Public decrypt failed'); setDecision('error'); }
+    reactionPad.addEventListener("click", handlePadClick);
+    startTestBtn.addEventListener("click", () => {
+      try {
+        startReactionTest();
+      } catch (e) {
+        appendLog("startTest error", e?.message || e);
+      }
     });
 
-    btnUserDecrypt.addEventListener('click', async()=>{
-      try{
-        const planId = BigInt(planIdEl.value||'0');
-        const h = handleOut.value || await contract.getMyEligibilityHandle(planId);
-        if(!h || String(h)==='0x'+'0'.repeat(64)) throw new Error('No decision handle');
-        const ok = await smartDecrypt(String(h), 'signed');
-        setDecision('signed decrypt', ok);
-      }catch(e){ console.error(e); alert(e?.message||'Failed'); }
+    sendToChainBtn.addEventListener("click", () => {
+      runEncryptedFlow();
     });
 
-    // === Admin: set encrypted policy ===
-    btnSetPolicy.addEventListener('click', async()=>{
-      try{
-        if(!signer || !contract || !relayer) throw new Error('Connect wallet first');
-        if(!ownerAddr || ownerAddr.toLowerCase()!== (await signer.getAddress()).toLowerCase()) throw new Error('Owner only');
-        const planId = BigInt(pPlanEl.value||'0');
-        const a=Number(pKycEl.value||'0')|0, b=Number(pTenureEl.value||'0')|0, c=Number(pVolEl.value||'0')|0, d=Number(pPassEl.value||'0')|0;
-        if(planId<=0n) throw new Error('Bad planId');
-
-        const buf = relayer.createEncryptedInput(CONTRACT_ADDRESS, await signer.getAddress());
-        buf.add8(a); buf.add16(b); buf.add32(c); buf.add8(d);
-        const { handles, inputProof } = await buf.encrypt();
-
-        const tx = await contract.setPolicyEncrypted(planId, handles[0], handles[1], handles[2], handles[3], inputProof);
-        await tx.wait(); alert('Policy set ✓');
-      }catch(e){ console.error(e); alert(e?.message||'Failed'); }
+    refreshResultBtn.addEventListener("click", () => {
+      refreshAndDecryptTier();
     });
 
-    if(window.ethereum){
-      window.ethereum.on?.('accountsChanged', ()=>location.reload());
-      window.ethereum.on?.('chainChanged', ()=>location.reload());
-      try{ const a = await window.ethereum.request({ method:'eth_accounts' }); if(a && a.length) await connect(); }catch{}
+    setTiersBtn.addEventListener("click", () => {
+      setTiers();
+    });
+
+    /* ----------------------------- initial startup ----------------------------- */
+
+    await configure({
+      contractAddress: CONTRACT_ADDRESS,
+      abi: CONTRACT_ABI
+    });
+
+    updateConnectionUI();
+    appendLog("Page ready");
+
+    await autoConnectIfAuthorized();
+    if (_state.account) {
+      updateConnectionUI();
+      await refreshAndDecryptTier();
     }
   </script>
 </body>

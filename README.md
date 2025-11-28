@@ -1,352 +1,162 @@
-# Encrypted Player Registry · Zama FHEVM
+# ⚡ Zama Private Reaction Test
 
-A minimal demo dApp that showcases how to build a privacy‑preserving player registry on top of the **Zama FHEVM**.
+**Press when it turns green. The blockchain only sees your performance tier — never your raw milliseconds.**
 
-Each player registers with:
-
-* a **public name** stored in plaintext (for leaderboards / UX), and
-* a **fully homomorphic encrypted age** stored as an `euint8` in the smart contract.
-
-The age is never revealed on-chain in clear form. The player can decrypt their own age off‑chain using the **Relayer SDK 0.2.0** and an EIP‑712 signature.
+A fully homomorphic encryption (FHE) demo built on **Zama FHEVM**, showcasing how real-time encrypted inputs can be processed entirely on-chain without revealing private data.
 
 ---
 
-## Tech stack
+## 🎯 Overview
 
-* **Smart contract**: Solidity `^0.8.24`
+**Private Reaction Test** is a browser-based mini-game that measures your reaction time locally, encrypts the result with Zama's **Relayer SDK**, and sends the ciphertext to an **FHE-enabled smart contract** deployed on the **Sepolia FHEVM** network.
 
-  * `@fhevm/solidity` (Zama FHE library)
-  * `SepoliaConfig` from Zama FHEVM config
-* **Frontend**: single‑page HTML app
-
-  * `@zama-fhe/relayer-sdk` **0.2.0** (browser build)
-  * `ethers` **v6** (ESM, `BrowserProvider`, `Contract`)
-* **Network**: Sepolia FHEVM (testnet)
-* **Tooling**: Hardhat + hardhat‑deploy (backend), static web server (frontend)
-
-Frontend entry point lives at:
-
-```text
-frontend/public/index.html
-```
+The contract never learns your exact milliseconds — it only evaluates which **category** (Gold / Silver / Bronze) your encrypted reaction belongs to, using FHE comparisons.
 
 ---
 
-## Main idea
+## 🔐 Model of Operation
 
-The dApp demonstrates a simple pattern for Zama FHEVM:
+### 1. Local Measurement
 
-1. The user encrypts sensitive data (age) **in the browser** using the Relayer SDK.
-2. The encrypted value is sent to the smart contract as an `externalEuint8` handle + `proof`.
-3. The contract converts this into an `euint8` and stores it in state.
-4. The user can later:
+* The frontend displays a simple light signal (red → green).
+* When the screen turns green, the user clicks as fast as possible.
+* The browser measures the reaction time in **milliseconds**.
 
-   * Inspect the **encrypted age handle** on-chain, and
-   * Use **userDecrypt** with an EIP‑712 signature to recover their age off‑chain.
+### 2. Encryption (Client-Side)
 
-This pattern is reusable for any “profile with private fields” system.
+* The measured value (e.g., `2784 ms`) is **encrypted inside the browser** using the [Zama Relayer SDK](https://docs.zama.ai/protocol/relayer-sdk-guides/).
+* The user’s browser generates `externalEuint16` ciphertext and `proof` via `createEncryptedInput(...)`.
+
+### 3. FHE Evaluation (Smart Contract)
+
+* The encrypted time is submitted to the contract:
+
+  ```solidity
+  submitEncryptedReaction(bytes32 encTime, bytes proof)
+  ```
+* The contract compares the ciphertext to three encrypted thresholds:
+
+  ```solidity
+  ebool gold = FHE.le(encTime, eGoldThreshold);
+  ebool silver = FHE.le(encTime, eSilverThreshold);
+  ebool bronze = FHE.le(encTime, eBronzeThreshold);
+  ```
+* Only the **tier category** (Gold/Silver/Bronze) remains, stored as encrypted output (`eTier`).
+* The raw time never leaves the browser or appears on-chain.
+
+### 4. Decryption (User-Side)
+
+* Using **userDecrypt** (EIP-712 + Relayer flow), the user decrypts their result locally.
+* The chain only stores encrypted values and access rights — no plaintexts are ever public.
 
 ---
 
-## Smart contract overview
+## 🧠 Smart Contract Logic
 
-Contract name: `EncryptedPlayerRegistry`
+Contract address: `0x336AD8895440fB523EEA1573A8f13c0d7C5aE130`
 
-Key properties:
-
-* Uses only official Zama FHE Solidity library:
-
-  * `import { FHE, euint8, externalEuint8 } from "@fhevm/solidity/lib/FHE.sol";`
-* Extends `SepoliaConfig` for the FHEVM network configuration.
-* Encrypted fields are always stored as `euint8` and **never decrypted on-chain**.
-* Access control over ciphertexts is handled via:
-
-  * `FHE.allowThis(ciphertext)`
-  * `FHE.allow(ciphertext, user)`
-  * `FHE.makePubliclyDecryptable(ciphertext)` for opt‑in public auditability.
-
-### Storage
+The contract uses Zama’s official Solidity library:
 
 ```solidity
-struct Player {
-    bool exists;   // registration flag
-    string name;   // public display name
-    euint8 age;    // encrypted age
-}
-
-mapping(address => Player) private _players;
-address public owner;
+import { FHE, euint16, ebool, externalEuint16 } from "@fhevm/solidity/lib/FHE.sol";
 ```
 
-* `name` is stored in the clear.
-* `age` is an encrypted `euint8`.
+### Core Features
 
-### Public / player functions
+* **Encrypted thresholds:** Gold, Silver, and Bronze limits are stored as encrypted `euint16` values.
+* **Encrypted input:** Users send their reaction time encrypted off-chain.
+* **FHE comparison:** Contract compares encrypted time vs encrypted thresholds using `FHE.le()`.
+* **Encrypted tier result:** Output is stored as `euint16 eTier`, decryptable only by the player.
 
-* `registerEncrypted(string name, externalEuint8 ageExt, bytes proof)`
+### Admin Flow
 
-  * Encrypt age in the browser using the Relayer SDK.
-  * Call this function with the encrypted handle and proof.
-  * Contract:
+Only the contract owner can configure thresholds:
 
-    * calls `FHE.fromExternal(ageExt, proof)` → `euint8` ciphertext;
-    * stores it in `_players[msg.sender].age`;
-    * uses `FHE.allowThis` and `FHE.allow(ciphertext, msg.sender)`.
+```solidity
+setReactionTiers(encGold, encSilver, encBronze, proof);
+```
 
-* `registerPlain(string name, uint8 agePlain)`
-
-  * Dev/demo helper.
-  * Converts plaintext `agePlain` into ciphertext using `FHE.asEuint8` on-chain.
-
-* `updateName(string newName)`
-
-  * Updates only the public `name` field.
-
-* `updateAgeEncrypted(externalEuint8 newAgeExt, bytes proof)`
-
-  * Updates only the encrypted age.
-
-* `isRegistered(address player) -> bool`
-
-  * Returns whether a player has a profile.
-
-* `getPlayer(address player) -> (bool exists, string name, bytes32 ageHandle)`
-
-  * Returns profile metadata and the encrypted age handle (`bytes32`).
-  * `ageHandle` can be fed to public decryption or user decryption off-chain.
-
-* `getMyAgeHandle() -> bytes32`
-
-  * Convenience method to fetch the `bytes32` handle for `msg.sender`’s age.
-
-* `makeMyAgePublic()`
-
-  * Calls `FHE.makePubliclyDecryptable(_players[msg.sender].age)`.
-  * Allows anyone to call `publicDecrypt` on the ciphertext.
-
-### Owner/admin functions
-
-* `owner` / `transferOwnership(address newOwner)`
-
-  * Standard ownership pattern.
-
-* `makePlayerAgePublic(address player)`
-
-  * For audits / demos, owner can force a player’s age to be publicly decryptable.
-
-* `clearPlayer(address player)`
-
-  * Logically clears a player profile.
-  * Sets `exists = false`, wipes `name`, and replaces age with `FHE.asEuint8(0)`.
-  * Avoids using `delete` on `euint8` (not supported).
+Each threshold is encrypted client-side with the Relayer SDK, ensuring even admin data stays private.
 
 ---
 
-## Frontend overview
+## 💻 User Interface & Usage
 
-The frontend is a single `index.html` with:
+### 1. 🦊 Connect Your Wallet
 
-* A **three‑column layout**:
+* Click **Connect Wallet** (MetaMask or any EIP-1193 provider).
+* The app auto-switches to **Sepolia FHEVM**.
 
-  * Player onboarding (name + encrypted age).
-  * “My profile” section (view profile, update name/age, decrypt age).
-  * Owner console (mark ages public / clear profiles).
-* A **dark neon UI** designed to be visually distinct from other demos.
-* Uses **Relayer SDK 0.2.0** and **ethers v6** via ESM CDNs.
+### 2. 🚦 Start a Reaction Test
 
-Key flows:
+* Click **Start new reaction test**.
+* Wait for the light to turn **green**, then tap the circle.
+* The app measures your reaction time locally (in ms).
 
-### 1. Connect wallet & Relayer
+### 3. 🔐 Encrypt & Send
 
-* Uses `BrowserProvider(window.ethereum)` from ethers v6.
-* Automatically switches to Sepolia (chain id `0xaa36a7`).
-* Initializes the Relayer with:
+* Click **Encrypt & send to contract**.
+* The time is encrypted and sent to the FHEVM contract.
+* Smart contract evaluates your encrypted performance tier (Gold / Silver / Bronze).
 
-```ts
-await initSDK();
-relayer = await createInstance({
-  ...SepoliaConfig,
-  relayerUrl: "https://relayer.testnet.zama.cloud",
-  network: window.ethereum,
-  debug: true,
-});
-```
+### 4. 🏅 View Your Private Result
 
-### 2. Encrypted registration
+* Click **Refresh & decrypt last result**.
+* The app uses `userDecrypt()` to retrieve and decrypt your encrypted tier.
+* The chain never sees or stores your plaintext reaction time.
 
-* User enters `name` + `age`.
-* Frontend calls:
+### 5. 🛠 Admin Panel (Owner Only)
 
-```ts
-const input = relayer.createEncryptedInput(CONTRACT_ADDRESS, user);
-input.add8(age);                      // age is uint8
-const { handles, inputProof } = await input.encrypt();
-
-await contract.registerEncrypted(name, handles[0], inputProof);
-```
-
-### 3. Decrypting age (userDecrypt)
-
-* Frontend calls `getMyAgeHandle()`.
-* Generates an ephemeral keypair with `generateKeypair()`.
-* Builds EIP‑712 data via `relayer.createEIP712(...)`.
-* Uses `signer.signTypedData(...)` (EIP‑712) and then:
-
-```ts
-const pairs = [{ handle, contractAddress: CONTRACT_ADDRESS }];
-const result = await relayer.userDecrypt(
-  pairs,
-  kp.privateKey,
-  kp.publicKey,
-  sig.replace("0x", ""),
-  [CONTRACT_ADDRESS],
-  user,
-  startTs,
-  daysValid,
-);
-```
-
-* Displays the decrypted age **only in the UI**, never sending it back on-chain.
+* Visible only to the contract owner.
+* Allows encrypted configuration of thresholds (Gold/Silver/Bronze) in milliseconds.
+* Thresholds are encrypted locally before being sent to the contract.
 
 ---
 
-## Project layout
+## 🧩 Project Structure
 
-A minimal layout (simplified):
-
-```text
-.
-├── contracts/
-│   └── EncryptedPlayerRegistry.sol
-├── frontend/
-│   └── public/
-│       └── index.html   # the SPA described above
-├── deploy/
-│   └── universal-deploy.ts
-├── hardhat.config.ts
-├── package.json
-└── README.md
 ```
+Zama-Private-Reaction-Test/
+├── index.html          # One-page webapp (UI + logic + Relayer integration)
+├── /assets/            # Optional static icons or backgrounds
+├── README.md           # Project documentation
+└── /contracts/         # Solidity source (for reference)
+```
+
+### Key Frontend Modules
+
+| Section                     | Description                                              |
+| --------------------------- | -------------------------------------------------------- |
+| `fheCore.configure()`       | Initializes FHE Relayer + contract connection            |
+| `encryptUint16(value)`      | Encrypts user reaction time locally                      |
+| `submitEncryptedReaction()` | Sends ciphertext + proof to FHEVM                        |
+| `userDecryptHandles()`      | Performs user-side decryption via Relayer SDK            |
+| `setReactionTiers()`        | Owner-only: sets encrypted Gold/Silver/Bronze thresholds |
 
 ---
 
-## Installation & setup
+## ⚙️ Tech Stack
 
-### 1. Clone & install dependencies
-
-```bash
-git clone &lt;this-repo-url&gt;
-cd &lt;this-repo-folder&gt;
-
-# Install backend deps (Hardhat, hardhat-deploy, etc.)
-npm install
-```
-
-If the frontend uses its own `package.json` inside `frontend/`, also run:
-
-```bash
-cd frontend
-npm install
-cd ..
-```
-
-### 2. Environment variables (Hardhat)
-
-In the project root, create a `.env` file (or update an existing one):
-
-```bash
-SEPOLIA_RPC_URL=https://&lt;your-sepolia-rpc&gt;
-PRIVATE_KEY=0x&lt;your_deployer_private_key&gt;
-
-# Optional for universal-deploy
-CONTRACT_NAME=EncryptedPlayerRegistry
-CONSTRUCTOR_ARGS='[]'
-```
-
-> **Note:** never commit real private keys to Git. Use environment variables or a secure secret manager.
-
-### 3. Compile & deploy the contract
-
-```bash
-npx hardhat clean
-npx hardhat compile
-npx hardhat deploy --network sepolia
-```
-
-If you use the provided `universal-deploy.ts` script, it will pick up `CONTRACT_NAME` and `CONSTRUCTOR_ARGS` automatically.
-
-Make sure the deployed address matches the one used by the frontend (`CONTRACT_ADDRESS` constant in `index.html`).
+* **Smart Contract:** Solidity 0.8.24 on Zama FHEVM (Sepolia)
+* **Frontend:** HTML + Vanilla JS (no frameworks)
+* **Encryption Layer:** [@zama-fhe/relayer-sdk](https://cdn.zama.org/relayer-sdk-js/0.3.0-5/relayer-sdk-js.js)
+* **Web3 Library:** ethers.js v6.15
 
 ---
 
-## Running the frontend
+## 🧩 Core Concepts Demonstrated
 
-Since the frontend is a static HTML SPA using WASM and `Cross-Origin-Opener-Policy`, you should serve it via a local HTTP server (not via `file://`).
-
-From the project root:
-
-```bash
-cd frontend/public
-
-# Simple option: use serve (no config needed)
-npx serve .
-
-# or, if you prefer http-server
-# npx http-server .
-```
-
-Then open the printed URL in your browser (e.g. [http://localhost:3000](http://localhost:3000) or [http://127.0.0.1:8080](http://127.0.0.1:8080)).
-
-Requirements:
-
-* Browser with EIP‑1193 wallet (MetaMask, Rabby…) connected to **Sepolia**.
-* Zama FHEVM RPC configured in your wallet / Hardhat.
+| Concept                   | Description                                                                          |
+| ------------------------- | ------------------------------------------------------------------------------------ |
+| **FHE Encrypted Inputs**  | All values (reaction times, thresholds) are encrypted before reaching the blockchain |
+| **Encrypted Computation** | Smart contract computes comparisons (`<`, `>`, `=`) directly on ciphertexts          |
+| **Private Decryption**    | Only the user can decrypt their own category via EIP-712-signed userDecrypt          |
+| **On-chain Privacy**      | No plaintexts (milliseconds or thresholds) ever appear on-chain                      |
 
 ---
 
-## How to use the dApp
+## 🏁 Summary
 
-1. **Connect wallet**
+**Zama Private Reaction Test** proves that even simple games can be built on privacy-preserving blockchain logic. Every reaction, threshold, and result remains **fully encrypted**, showing the power of **Zama’s FHEVM** for secure, real-time computation.
 
-   * Click **“Connect wallet”** in the header.
-   * Approve network switch to Sepolia if prompted.
-
-2. **Register as a player**
-
-   * In **“Player onboarding”** panel:
-
-     * Enter a public display name.
-     * Enter your age (0–255).
-     * Click **“Encrypt & register”**.
-   * Wait for the transaction to confirm.
-
-3. **Inspect your profile**
-
-   * In **“My profile”** panel, click **“Load my profile”**.
-   * You will see:
-
-     * Your name, and
-     * Your encrypted age handle (`bytes32`).
-
-4. **Decrypt your age**
-
-   * Click **“Private decrypt via Relayer”**.
-   * Sign the EIP‑712 message in your wallet.
-   * The decrypted age will appear as a pill in the UI, visible only in your browser.
-
-5. **Owner tools (optional)**
-
-   * If connected as `owner`:
-
-     * Use **“Make age public”** for a target address to enable public decryption.
-     * Use **“Clear profile”** to logically clear a user profile.
-
----
-
-
-
----
-
-## License
-
-MIT — feel free to fork, adapt and extend for your own Zama FHEVM demos.
+> “Play fast, stay private.”
